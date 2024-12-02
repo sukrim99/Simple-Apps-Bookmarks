@@ -5,15 +5,13 @@ from tkinter import messagebox
 import PACK as pack
 
 
-
-
-
 """ GUI LIBRARY VIEW """
+
 
 def show_library_gui():
     """Fungsi untuk menampilkan GUI library"""
     clear_frame(root_frame)
-    
+
     # Ambil data buku
     library_data, total_books = pack.get_library_data()
 
@@ -37,75 +35,92 @@ def show_library_gui():
 
     # Definisikan header dan konfigurasi kolom
     headers = {
-        'title': {'text': 'Judul Novel', 'width': 250, 'anchor': 'w', 'padx': 20},  # Tambah padx
-        'author': {'text': 'Penulis', 'width': 200, 'anchor': 'center', 'padx': 10},
-        'chapter': {'text': 'Chapter', 'width': 100, 'anchor': 'center', 'padx': 10},
-        'platform': {'text': 'Platform', 'width': 150, 'anchor': 'center', 'padx': 10}
+        "title": {
+            "text": "Judul Novel",
+            "width": 250,
+            "anchor": "w",
+            "padx": 20,
+        },  # Tambah padx
+        "author": {"text": "Penulis", "width": 200, "anchor": "center", "padx": 10},
+        "chapter": {"text": "Chapter", "width": 100, "anchor": "center", "padx": 10},
+        "platform": {"text": "Platform", "width": 150, "anchor": "center", "padx": 10},
     }
-    
+
     # Buat frame untuk header dengan border
-    header_frame = ctk.CTkFrame(container, fg_color="#00a48e", border_width=2, border_color="#3498db")
-    header_frame.grid(row=0, column=0, columnspan=len(headers)*2-1, sticky="ew", pady=(0, 5))
-    
+    header_frame = ctk.CTkFrame(
+        container, 
+        fg_color="#00a48e", 
+        border_width=2, 
+        border_color="#3498db"
+    )
+    header_frame.grid(
+        row=0, 
+        column=0, 
+        columnspan=len(headers) * 2 - 1, 
+        sticky="ew", pady=(0, 5)
+    )
+
     # Tampilkan header dengan separator
     for col, (key, config) in enumerate(headers.items()):
         grid_col = col * 2
-        
+
         # Frame khusus untuk header label untuk mengatur padding
         header_label_frame = ctk.CTkFrame(header_frame, fg_color="#00a48e")
         header_label_frame.grid(row=0, column=grid_col, sticky="ew", pady=5)
-        
+
         header_label = ctk.CTkLabel(
             header_label_frame,
-            text=config['text'],
+            text=config["text"],
             font=("Helvetica", 13, "bold"),
-            width=config['width'],
+            width=config["width"],
             height=40,
-            anchor=config['anchor'],
-            fg_color="#00a48e"
+            anchor=config["anchor"],
+            fg_color="#00a48e",
         )
-        header_label.pack(padx=config['padx'], fill="x")  # Gunakan padx dari konfigurasi
-        
+        header_label.pack(
+            padx=config["padx"], fill="x"
+        )  # Gunakan padx dari konfigurasi
+
         # Tambahkan separator vertikal
         if col < len(headers) - 1:
             separator = ctk.CTkFrame(
-                header_frame,
-                width=2,
-                height=40,
-                fg_color="#3498db"
+                header_frame, width=2, height=40, fg_color="#3498db"
             )
             separator.grid(row=0, column=grid_col + 1, sticky="ns", pady=5)
-    
+
     # Tampilkan data dengan padding yang sama
     for row, book in enumerate(library_data, start=1):
         row_bg = "#2D3436" if row % 2 == 0 else "#1E272E"
-        row_frame = ctk.CTkFrame(container, fg_color=row_bg, border_width=1, border_color="#2C3E50")
-        row_frame.grid(row=row, column=0, columnspan=len(headers)*2-1, sticky="ew", pady=1)
-        
+        row_frame = ctk.CTkFrame(
+            container, fg_color=row_bg, border_width=1, border_color="#2C3E50"
+        )
+        row_frame.grid(
+            row=row, column=0, columnspan=len(headers) * 2 - 1, sticky="ew", pady=1
+        )
+
         # Mapping data ke kolom
         for col, (key, config) in enumerate(headers.items()):
             grid_col = col * 2
-            
+
             # Frame untuk data label
             data_label_frame = ctk.CTkFrame(row_frame, fg_color=row_bg)
             data_label_frame.grid(row=0, column=grid_col, sticky="ew")
-            
+
             ctk.CTkLabel(
                 data_label_frame,
                 text=book[key],
                 font=("Helvetica", 12),
-                width=config['width'],
+                width=config["width"],
                 height=35,
-                anchor=config['anchor'],
-            ).pack(padx=config['padx'], fill="x")  # Gunakan padding yang sama dengan header
-            
+                anchor=config["anchor"],
+            ).pack(
+                padx=config["padx"], fill="x"
+            )  # Gunakan padding yang sama dengan header
+
             # Tambahkan separator vertikal
             if col < len(headers) - 1:
                 separator = ctk.CTkFrame(
-                    row_frame,
-                    width=2,
-                    height=35,
-                    fg_color="#2C3E50"
+                    row_frame, width=2, height=35, fg_color="#2C3E50"
                 )
                 separator.grid(row=0, column=grid_col + 1, sticky="ns", pady=5)
 
@@ -128,9 +143,8 @@ def show_library_gui():
     ).pack(pady=(20, 0))
 
 
-
-
 """ CLEAR FRAME """
+
 
 def clear_frame(frame):
     """Hapus semua widget di frame tertentu."""
@@ -302,13 +316,13 @@ def create_book_gui(frame, root):
 def update_book_gui(frame, root):
     def search_file():
         result = pack.search_book_md(filename_entry.get())
-        
-        if result['success']:
+
+        if result["success"]:
             current_content_text.delete("1.0", "end")
-            current_content_text.insert("1.0", result['content'])
+            current_content_text.insert("1.0", result["content"])
             messagebox.showinfo("Success", f"File yang ditemukan: {result['filename']}")
         else:
-            messagebox.showerror("Error", result['message'])
+            messagebox.showerror("Error", result["message"])
 
     def save_changes():
         result = pack.update_book_md(

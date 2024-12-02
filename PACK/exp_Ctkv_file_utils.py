@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
 
+
 def get_library_data():
     """Fungsi untuk mengambil dan mengelompokkan data buku dari file MD"""
     # Tentukan direktori yang benar
-    # directory = r"E:\Obsidian Belajar\LEARNING_(LITERATUR-NOTE)\TEKNOLOGI\PYTHON\CODE\penanda_buku_md\CTK_version\exp_CTK\komik_md"
+
     directory = Path(__file__).parent.parent / "komik_md"
     library_data = []
 
