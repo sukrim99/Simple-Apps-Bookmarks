@@ -39,11 +39,26 @@ def show_library_gui():
             "text": "Judul Novel",
             "width": 250,
             "anchor": "w",
-            "padx": 20,
-        },  # Tambah padx
-        "author": {"text": "Penulis", "width": 200, "anchor": "center", "padx": 10},
-        "chapter": {"text": "Chapter", "width": 100, "anchor": "center", "padx": 10},
-        "platform": {"text": "Platform", "width": 150, "anchor": "center", "padx": 10},
+            "padx": (20, 10),
+        },
+        "author": {
+            "text": "Penulis",
+            "width": 200,
+            "anchor": "w",
+            "padx": (10, 0)
+        },
+        "chapter": {
+            "text": "Chapter",
+            "width": 100,
+            "anchor": "center",
+            "padx": (10, 10)
+        },
+        "platform": {
+            "text": "Platform",
+            "width": 150,
+            "anchor": "w",
+            "padx": (10, 10)
+        },
     }
 
     # Buat frame untuk header dengan border
@@ -106,16 +121,58 @@ def show_library_gui():
             data_label_frame = ctk.CTkFrame(row_frame, fg_color=row_bg)
             data_label_frame.grid(row=0, column=grid_col, sticky="ew")
 
-            ctk.CTkLabel(
+            # Gunakan CTkTextbox dengan konfigurasi yang disesuaikan
+            text_widget = ctk.CTkTextbox(
                 data_label_frame,
-                text=book[key],
                 font=("Helvetica", 12),
                 width=config["width"],
                 height=35,
-                anchor=config["anchor"],
-            ).pack(
-                padx=config["padx"], fill="x"
-            )  # Gunakan padding yang sama dengan header
+                activate_scrollbars=False,
+                fg_color=row_bg,
+                wrap="none"
+            )
+            text_widget.pack(padx=config["padx"], fill="x", expand=True)
+            
+            # Sesuaikan alignment teks
+            content = str(book[key])
+            
+            # Jika ini adalah kolom judul, buat sebagai link yang bisa diklik
+            if key == "title":
+                text_widget.tag_config("link", foreground="#3498db", underline=True)
+                text_widget.insert("1.0", content, "link")
+                
+                # Fungsi untuk menangani klik
+                def handle_click(event, title=content):
+                    filename = f"DP_KMK_{title}.md"
+                    update_book_gui(root_frame, root)
+                    
+                    def delayed_fill():
+                        if hasattr(root, 'current_filename_entry') and hasattr(root, 'current_content_textbox'):
+                            # Isi nama file
+                            root.current_filename_entry.delete(0, 'end')
+                            root.current_filename_entry.insert(0, filename)
+                            
+                            # Cari dan tampilkan isi file
+                            result = pack.search_book_md(filename)
+                            if result["success"]:
+                                root.current_content_textbox.delete("1.0", "end")
+                                root.current_content_textbox.insert("1.0", result["content"])
+                    
+                    root.after(100, delayed_fill)
+                
+                # Bind event klik
+                text_widget.tag_bind("link", "<Button-1>", handle_click)
+                text_widget.configure(cursor="hand2")  # Ubah cursor saat hover
+            else:
+                if config["anchor"] == "center":
+                    available_width = config["width"] // 7
+                    padding = " " * ((available_width - len(content)) // 1)
+                    text_widget.insert("1.0", f"{padding}{content}")
+                else:
+                    text_widget.insert("1.0", content)
+            
+            # Konfigurasi tambahan untuk text widget
+            text_widget.configure(state="disabled")  # Ubah state menjadi "disabled" agar tidak bisa diedit
 
             # Tambahkan separator vertikal
             if col < len(headers) - 1:
@@ -412,3 +469,7 @@ def update_book_gui(frame, root):
     ctk.CTkButton(button_frame, text="Kembali", command=show_main_menu).grid(
         row=0, column=1, padx=5, sticky="ew"
     )
+
+    # Tambahkan referensi ke root untuk akses global
+    root.current_filename_entry = filename_entry
+    root.current_content_textbox = current_content_text
