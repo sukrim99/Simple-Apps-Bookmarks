@@ -33,7 +33,7 @@ def create_book_md(
     """
     try:
         # Ubah base_dir ke path yang spesifik
-        base_dir = Path(__file__).parent.parent / "komik_md"
+        base_dir = Path(__file__).parent.parent / "library_komik_md"
         base_dir.mkdir(parents=True, exist_ok=True)
 
         # Format konten markdown

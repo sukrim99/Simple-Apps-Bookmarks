@@ -6,7 +6,7 @@ def get_library_data():
     """Fungsi untuk mengambil dan mengelompokkan data buku dari file MD"""
     # Tentukan direktori yang benar
 
-    directory = Path(__file__).parent.parent / "komik_md"
+    directory = Path(__file__).parent.parent / "library_komik_md"
     library_data = []
 
     try:

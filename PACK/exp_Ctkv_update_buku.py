@@ -8,7 +8,7 @@ from pathlib import Path
 def search_book_md(filename):
     """Fungsi untuk mencari dan membaca konten file"""
     # directory = r"E:\Obsidian Belajar\LEARNING_(LITERATUR-NOTE)\TEKNOLOGI\PYTHON\CODE\penanda_buku_md\CTK_version\exp_CTK\komik_md"
-    directory = Path(__file__).parent.parent / "komik_md"
+    directory = Path(__file__).parent.parent / "library_komik_md"
     try:
         # Dapatkan daftar file dengan path lengkap
         md_files = [f for f in os.listdir(directory) if f.endswith(".md")]
@@ -49,7 +49,7 @@ def update_book_md(
 ):
     """Fungsi untuk memperbarui konten file"""
     # directory = r"E:\Obsidian Belajar\LEARNING_(LITERATUR-NOTE)\TEKNOLOGI\PYTHON\CODE\penanda_buku_md\CTK_version\exp_CTK\komik_md"
-    directory = Path(__file__).parent.parent / "komik_md"
+    directory = Path(__file__).parent.parent / "library_komik_md"
     try:
         # Pastikan direktori ada
         if not os.path.exists(directory):
