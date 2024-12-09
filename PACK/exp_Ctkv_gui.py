@@ -1,203 +1,223 @@
 import customtkinter as ctk
 from tkinter import messagebox
+from typing import Dict, Any, Callable
+from dataclasses import dataclass
 
 # local import
 import PACK as pack
+
+# Konstanta untuk UI
+UI_CONSTANTS = {
+    "FONTS": {
+        "HEADER": ("Helvetica", 24, "bold"),
+        "SUBHEADER": ("Helvetica", 20),
+        "NORMAL": ("Helvetica", 12),
+        "BOLD": ("Helvetica", 13, "bold"),
+        "ITALIC": ("Helvetica", 12, "italic"),
+    },
+    "COLORS": {
+        "HEADER_BG": "#00a48e",
+        "ROW_BG_1": "#1E272E",
+        "ROW_BG_2": "#2D3436",
+        "BORDER": "#3498db",
+        "SEPARATOR": "#2C3E50",
+        "LINK": "#3498db",
+    },
+    "SIZES": {
+        "WINDOW_MIN": (600, 400),
+        "LIBRARY_WIDTH": 800,
+        "LIBRARY_HEIGHT": 500,
+        "BUTTON_HEIGHT": 40,
+    }
+}
+
+@dataclass
+class ColumnConfig:
+    """Konfigurasi untuk kolom tabel."""
+    text: str
+    width: int
+    anchor: str
+    padx: tuple[int, int]
 
 
 """ GUI LIBRARY VIEW """
 
 
+def create_header_label(parent: ctk.CTkFrame, config: Dict[str, Any]) -> ctk.CTkLabel:
+    """Membuat label header untuk tabel."""
+    header_label_frame = ctk.CTkFrame(parent, fg_color=UI_CONSTANTS["COLORS"]["HEADER_BG"])
+    header_label_frame.grid(row=0, column=config["grid_col"], sticky="ew", pady=5)
+    
+    return ctk.CTkLabel(
+        header_label_frame,
+        text=config["text"],
+        font=UI_CONSTANTS["FONTS"]["BOLD"],
+        width=config["width"],
+        height=UI_CONSTANTS["SIZES"]["BUTTON_HEIGHT"],
+        anchor=config["anchor"],
+        fg_color=UI_CONSTANTS["COLORS"]["HEADER_BG"],
+    )
+
+def create_data_cell(parent: ctk.CTkFrame, config: Dict[str, Any], content: str, 
+                    row_bg: str, handle_click: Callable = None) -> ctk.CTkTextbox:
+    """Membuat sel data untuk tabel."""
+    text_widget = ctk.CTkTextbox(
+        parent,
+        font=UI_CONSTANTS["FONTS"]["NORMAL"],
+        width=config["width"],
+        height=35,
+        activate_scrollbars=False,
+        fg_color=row_bg,
+        wrap="none"
+    )
+    
+    if handle_click:
+        text_widget.tag_config("link", 
+                             foreground=UI_CONSTANTS["COLORS"]["LINK"], 
+                             underline=True)
+        text_widget.insert("1.0", content, "link")
+        text_widget.tag_bind("link", "<Button-1>", 
+                           lambda e: handle_click(content))
+        text_widget.configure(cursor="hand2")
+    else:
+        if config["anchor"] == "center":
+            content = content.center(len(content) + 4)
+        text_widget.insert("1.0", content)
+    
+    text_widget.configure(state="disabled")
+    return text_widget
+
 def show_library_gui():
-    """Fungsi untuk menampilkan GUI library"""
+    """Menampilkan GUI library dengan data buku."""
     clear_frame(root_frame)
-
-    # Ambil data buku
+    
     library_data, total_books = pack.get_library_data()
-
-    # Buat frame utama untuk centering
+    print(f"Data yang diterima: {library_data}")
+    
+    # Container utama dengan centering
     main_container = ctk.CTkFrame(root_frame, fg_color="transparent")
     main_container.place(relx=0.5, rely=0.5, anchor="center")
-
-    # Label judul
-    title_label = ctk.CTkLabel(
-        main_container, text="Daftar Buku", font=("Helvetica", 24, "bold")
-    )
-    title_label.pack(pady=(0, 20))
-
-    # Gunakan ukuran tetap untuk container, bukan relatif terhadap window
-    container = ctk.CTkScrollableFrame(
+    
+    # Header
+    ctk.CTkLabel(
+        main_container, 
+        text="Daftar Buku", 
+        font=UI_CONSTANTS["FONTS"]["HEADER"]
+    ).pack(pady=(0, 20))
+    
+    # Tabel container dengan ukuran tetap dan scrollbar minimal
+    table_container = ctk.CTkScrollableFrame(
         main_container,
-        width=800,  # Ukuran tetap, tidak bergantung pada window
-        height=500,  # Ukuran tetap, tidak bergantung pada window
+        width=UI_CONSTANTS["SIZES"]["LIBRARY_WIDTH"],
+        height=UI_CONSTANTS["SIZES"]["LIBRARY_HEIGHT"],
+        fg_color="transparent",
+        scrollbar_button_color="#2B2B2B",        # Warna gelap yang hampir tidak terlihat
+        scrollbar_button_hover_color="#3B3B3B",  # Sedikit lebih terang saat hover
+        scrollbar_fg_color="#2B2B2B"             # Sama dengan button color
     )
-    container.pack(padx=40, pady=20)
-
-    # Definisikan header dan konfigurasi kolom
-    headers = {
-        "title": {
-            "text": "Judul Novel",
-            "width": 250,
-            "anchor": "w",
-            "padx": (20, 10),
-        },
-        "author": {
-            "text": "Penulis",
-            "width": 200,
-            "anchor": "w",
-            "padx": (10, 0)
-        },
-        "chapter": {
-            "text": "Chapter",
-            "width": 100,
-            "anchor": "center",
-            "padx": (10, 10)
-        },
-        "platform": {
-            "text": "Platform",
-            "width": 150,
-            "anchor": "w",
-            "padx": (10, 10)
-        },
-    }
-
-    # Buat frame untuk header dengan border
+    table_container.pack(padx=10, pady=10)
+    
+    # Bind mouse wheel untuk scroll yang lebih smooth
+    def _on_mousewheel(event):
+        table_container._parent_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    table_container.bind_all("<MouseWheel>", _on_mousewheel)
+    
+    # Konfigurasi kolom
+    column_widths = [250, 200, 100, 150]  # Lebar untuk setiap kolom
+    headers = ["Judul Novel", "Penulis", "Chapter", "Platform"]
+    
+    # Header row dengan frame
     header_frame = ctk.CTkFrame(
-        container, 
-        fg_color="#00a48e", 
-        border_width=2, 
-        border_color="#3498db"
+        table_container,
+        fg_color=UI_CONSTANTS["COLORS"]["HEADER_BG"],
+        border_width=1,
+        border_color=UI_CONSTANTS["COLORS"]["BORDER"]
     )
-    header_frame.grid(
-        row=0, 
-        column=0, 
-        columnspan=len(headers) * 2 - 1, 
-        sticky="ew", pady=(0, 5)
-    )
-
-    # Tampilkan header dengan separator
-    for col, (key, config) in enumerate(headers.items()):
-        grid_col = col * 2
-
-        # Frame khusus untuk header label untuk mengatur padding
-        header_label_frame = ctk.CTkFrame(header_frame, fg_color="#00a48e")
-        header_label_frame.grid(row=0, column=grid_col, sticky="ew", pady=5)
-
-        header_label = ctk.CTkLabel(
-            header_label_frame,
-            text=config["text"],
-            font=("Helvetica", 13, "bold"),
-            width=config["width"],
-            height=40,
-            anchor=config["anchor"],
-            fg_color="#00a48e",
+    header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5), padx=5)
+    header_frame.grid_columnconfigure((0,1,2,3), weight=1)
+    
+    # Header labels
+    for col, (header, width) in enumerate(zip(headers, column_widths)):
+        header_cell = ctk.CTkFrame(
+            header_frame,
+            fg_color=UI_CONSTANTS["COLORS"]["HEADER_BG"]
         )
-        header_label.pack(
-            padx=config["padx"], fill="x"
-        )  # Gunakan padx dari konfigurasi
-
-        # Tambahkan separator vertikal
-        if col < len(headers) - 1:
-            separator = ctk.CTkFrame(
-                header_frame, width=2, height=40, fg_color="#3498db"
-            )
-            separator.grid(row=0, column=grid_col + 1, sticky="ns", pady=5)
-
-    # Tampilkan data dengan padding yang sama
+        header_cell.grid(row=0, column=col, sticky="ew", padx=1)
+        header_cell.grid_columnconfigure(0, weight=1)
+        
+        ctk.CTkLabel(
+            header_cell,
+            text=header,
+            font=UI_CONSTANTS["FONTS"]["BOLD"],
+            width=width,
+            height=35,
+            fg_color=UI_CONSTANTS["COLORS"]["HEADER_BG"]
+        ).grid(row=0, column=0, padx=5, pady=5, sticky="w")
+    
+    # Data rows
     for row, book in enumerate(library_data, start=1):
-        row_bg = "#2D3436" if row % 2 == 0 else "#1E272E"
         row_frame = ctk.CTkFrame(
-            container, fg_color=row_bg, border_width=1, border_color="#2C3E50"
+            table_container,
+            fg_color=UI_CONSTANTS["COLORS"]["ROW_BG_2" if row % 2 == 0 else "ROW_BG_1"],
+            border_width=1,
+            border_color=UI_CONSTANTS["COLORS"]["SEPARATOR"]
         )
-        row_frame.grid(
-            row=row, column=0, columnspan=len(headers) * 2 - 1, sticky="ew", pady=1
-        )
-
-        # Mapping data ke kolom
-        for col, (key, config) in enumerate(headers.items()):
-            grid_col = col * 2
-
-            # Frame untuk data label
-            data_label_frame = ctk.CTkFrame(row_frame, fg_color=row_bg)
-            data_label_frame.grid(row=0, column=grid_col, sticky="ew")
-
-            # Gunakan CTkTextbox dengan konfigurasi yang disesuaikan
-            text_widget = ctk.CTkTextbox(
-                data_label_frame,
-                font=("Helvetica", 12),
-                width=config["width"],
-                height=35,
-                activate_scrollbars=False,
-                fg_color=row_bg,
-                wrap="none"
+        row_frame.grid(row=row, column=0, sticky="ew", pady=1, padx=5)
+        row_frame.grid_columnconfigure((0,1,2,3), weight=1)
+        
+        # Kolom data
+        data = [book["title"], book["author"], book["chapter"], book["platform"]]
+        
+        for col, (content, width) in enumerate(zip(data, column_widths)):
+            cell_frame = ctk.CTkFrame(
+                row_frame,
+                fg_color=row_frame.cget("fg_color")
             )
-            text_widget.pack(padx=config["padx"], fill="x", expand=True)
+            cell_frame.grid(row=0, column=col, sticky="ew", padx=1)
+            cell_frame.grid_columnconfigure(0, weight=1)
             
-            # Sesuaikan alignment teks
-            content = str(book[key])
-            
-            # Jika ini adalah kolom judul, buat sebagai link yang bisa diklik
-            if key == "title":
-                text_widget.tag_config("link", foreground="#3498db", underline=True)
-                text_widget.insert("1.0", content, "link")
-                
-                # Fungsi untuk menangani klik
-                def handle_click(event, title=content):
-                    filename = f"DP_KMK_{title}.md"
-                    update_book_gui(root_frame, root)
-                    
-                    def delayed_fill():
-                        if hasattr(root, 'current_filename_entry') and hasattr(root, 'current_content_textbox'):
-                            # Isi nama file
-                            root.current_filename_entry.delete(0, 'end')
-                            root.current_filename_entry.insert(0, filename)
-                            
-                            # Cari dan tampilkan isi file
-                            result = pack.search_book_md(filename)
-                            if result["success"]:
-                                root.current_content_textbox.delete("1.0", "end")
-                                root.current_content_textbox.insert("1.0", result["content"])
-                    
-                    root.after(100, delayed_fill)
-                
-                # Bind event klik
-                text_widget.tag_bind("link", "<Button-1>", handle_click)
-                text_widget.configure(cursor="hand2")  # Ubah cursor saat hover
-            else:
-                if config["anchor"] == "center":
-                    available_width = config["width"] // 7
-                    padding = " " * ((available_width - len(content)) // 1)
-                    text_widget.insert("1.0", f"{padding}{content}")
-                else:
-                    text_widget.insert("1.0", content)
-            
-            # Konfigurasi tambahan untuk text widget
-            text_widget.configure(state="disabled")  # Ubah state menjadi "disabled" agar tidak bisa diedit
-
-            # Tambahkan separator vertikal
-            if col < len(headers) - 1:
-                separator = ctk.CTkFrame(
-                    row_frame, width=2, height=35, fg_color="#2C3E50"
+            if col == 0:  # Kolom judul dengan link
+                label = ctk.CTkLabel(
+                    cell_frame,
+                    text=content,
+                    font=UI_CONSTANTS["FONTS"]["NORMAL"],
+                    width=width,
+                    height=35,
+                    cursor="hand2",
+                    text_color=UI_CONSTANTS["COLORS"]["LINK"],
+                    fg_color=cell_frame.cget("fg_color")
                 )
-                separator.grid(row=0, column=grid_col + 1, sticky="ns", pady=5)
-
-    # Atur agar kolom responsif
-    for i in range(len(headers) * 2 - 1):
-        if i % 2 == 0:  # Kolom data
-            container.grid_columnconfigure(i, weight=1)
-        else:  # Kolom separator
-            container.grid_columnconfigure(i, weight=0)
-
-    # Info jumlah buku
-    info_text = f"Total Buku: {total_books}"
-    ctk.CTkLabel(container, text=info_text, font=("Helvetica", 12, "italic")).grid(
-        row=len(library_data) + 2, column=0, columnspan=4, pady=10
-    )
-
-    # Tombol kembali di bagian bawah
+                label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+                label.bind("<Button-1>", lambda e, title=content: handle_title_click(title, root))
+            else:
+                ctk.CTkLabel(
+                    cell_frame,
+                    text=content,
+                    font=UI_CONSTANTS["FONTS"]["NORMAL"],
+                    width=width,
+                    height=35,
+                    fg_color=cell_frame.cget("fg_color")
+                ).grid(row=0, column=0, padx=5, pady=5, sticky="w")
+    
+    # Info total buku
+    ctk.CTkLabel(
+        main_container, 
+        text=f"Total Buku: {total_books}",
+        font=UI_CONSTANTS["FONTS"]["ITALIC"]
+    ).pack(pady=10)
+    
+    # Tombol kembali
     ctk.CTkButton(
-        main_container, text="Kembali ke Menu Utama", command=show_main_menu, width=200
-    ).pack(pady=(20, 0))
+        main_container,
+        text="Kembali ke Menu Utama",
+        command=show_main_menu,
+        width=200
+    ).pack(pady=10)
+
+    # Unbind mousewheel when window is destroyed
+    def _on_destroy(event):
+        table_container.unbind_all("<MouseWheel>")
+    root_frame.bind("<Destroy>", _on_destroy)
 
 
 """ CLEAR FRAME """
@@ -473,3 +493,140 @@ def update_book_gui(frame, root):
     # Tambahkan referensi ke root untuk akses global
     root.current_filename_entry = filename_entry
     root.current_content_textbox = current_content_text
+
+def setup_library_table(container: ctk.CTkScrollableFrame, library_data: list):
+    """Setup tabel untuk menampilkan data library."""
+    if not library_data:
+        # Tampilkan pesan jika tidak ada data
+        ctk.CTkLabel(
+            container,
+            text="Tidak ada data buku yang tersedia",
+            font=UI_CONSTANTS["FONTS"]["ITALIC"]
+        ).grid(row=0, column=0, pady=20)
+        return
+
+    headers = {
+        "title": ColumnConfig("Judul Novel", 250, "w", (20, 10)),
+        "author": ColumnConfig("Penulis", 200, "w", (10, 0)),
+        "chapter": ColumnConfig("Chapter", 100, "center", (10, 10)),
+        "platform": ColumnConfig("Platform", 150, "w", (10, 10))
+    }
+    
+    # Buat header
+    header_frame = create_table_header(container, headers)
+    
+    # Buat baris data
+    for row, book in enumerate(library_data, start=1):
+        create_table_row(container, headers, book, row)
+        
+    # Setup kolom responsif
+    setup_responsive_columns(container, len(headers))
+
+def create_table_header(container: ctk.CTkScrollableFrame, 
+                       headers: Dict[str, ColumnConfig]) -> ctk.CTkFrame:
+    """Membuat header tabel."""
+    header_frame = ctk.CTkFrame(
+        container,
+        fg_color=UI_CONSTANTS["COLORS"]["HEADER_BG"],
+        border_width=2,
+        border_color=UI_CONSTANTS["COLORS"]["BORDER"]
+    )
+    header_frame.grid(
+        row=0,
+        column=0,
+        columnspan=len(headers) * 2 - 1,
+        sticky="ew",
+        pady=(0, 5)
+    )
+    
+    for col, (_, config) in enumerate(headers.items()):
+        grid_col = col * 2
+        
+        header_label = create_header_label(header_frame, {
+            "grid_col": grid_col,
+            "text": config.text,
+            "width": config.width,
+            "anchor": config.anchor
+        })
+        header_label.pack(padx=config.padx, fill="x")
+        
+        if col < len(headers) - 1:
+            create_separator(header_frame, grid_col + 1)
+            
+    return header_frame
+
+def create_table_row(container: ctk.CTkScrollableFrame, 
+                    headers: Dict[str, ColumnConfig],
+                    book: Dict[str, str], row: int):
+    """Membuat baris data untuk tabel."""
+    row_bg = UI_CONSTANTS["COLORS"]["ROW_BG_2" if row % 2 == 0 else "ROW_BG_1"]
+    
+    row_frame = ctk.CTkFrame(
+        container,
+        fg_color=row_bg,
+        border_width=1,
+        border_color=UI_CONSTANTS["COLORS"]["SEPARATOR"]
+    )
+    row_frame.grid(
+        row=row,
+        column=0,
+        columnspan=len(headers) * 2 - 1,
+        sticky="ew",
+        pady=1
+    )
+    
+    for col, (key, config) in enumerate(headers.items()):
+        grid_col = col * 2
+        content = str(book[key])
+        
+        if key == "title":
+            create_data_cell(
+                row_frame, 
+                {"grid_col": grid_col, "width": config.width, "anchor": config.anchor},
+                content,
+                row_bg,
+                lambda title: handle_title_click(title, root)
+            )
+        else:
+            create_data_cell(
+                row_frame,
+                {"grid_col": grid_col, "width": config.width, "anchor": config.anchor},
+                content,
+                row_bg
+            )
+        
+        if col < len(headers) - 1:
+            create_separator(row_frame, grid_col + 1)
+
+def create_separator(parent: ctk.CTkFrame, grid_col: int):
+    """Membuat separator vertikal."""
+    separator = ctk.CTkFrame(
+        parent,
+        width=2,
+        height=35,
+        fg_color=UI_CONSTANTS["COLORS"]["SEPARATOR"]
+    )
+    separator.grid(row=0, column=grid_col, sticky="ns", pady=5)
+
+def setup_responsive_columns(container: ctk.CTkScrollableFrame, num_headers: int):
+    """Setup kolom responsif."""
+    for i in range(num_headers * 2 - 1):
+        container.grid_columnconfigure(i, weight=1 if i % 2 == 0 else 0)
+
+def handle_title_click(title: str, root: ctk.CTk):
+    """Menangani klik pada judul buku."""
+    filename = f"DP_KMK_{title}.md"
+    update_book_gui(root_frame, root)
+    
+    def delayed_fill():
+        if hasattr(root, 'current_filename_entry') and \
+           hasattr(root, 'current_content_textbox'):
+            root.current_filename_entry.delete(0, 'end')
+            root.current_filename_entry.insert(0, filename)
+            
+            result = pack.search_book_md(filename)
+            if result["success"]:
+                root.current_content_textbox.delete("1.0", "end")
+                root.current_content_textbox.insert("1.0", result["content"])
+    
+    root.after(100, delayed_fill)

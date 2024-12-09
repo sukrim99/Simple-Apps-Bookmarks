@@ -1,11 +1,11 @@
 ---
-original name: Mitologi Jawa
+original name: Komunikasi Organisasi
 cover: No cover
-penulis: Drs.Budiono Herusatoto
-released: 2011
-genres: #budaya #sosial
+penulis: Morissan
+released: 2012
+genres: #sosial
 type: #manhwa
-chapter on read: 65
+chapter on read: 211
 updated-by: offline
 ---
 

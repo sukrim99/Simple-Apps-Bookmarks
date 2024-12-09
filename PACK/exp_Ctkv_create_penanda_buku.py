@@ -18,49 +18,51 @@ def create_book_md(
     Membuat file markdown penanda buku.
 
     Args:
-        title: Judul buku
-        author: Nama penulis
-        year_published: Tahun terbit
-        genre: Genre buku
-        last_chapter_read: Chapter terakhir dibaca
-        reading_platform: Platform membaca
-        description: Deskripsi buku
-        type_choice: Tipe buku
-        cover_input: URL/path cover buku
+        title (str): Judul buku
+        author (str): Nama penulis
+        year_published (str): Tahun terbit
+        genre (str): Genre buku (dipisahkan dengan koma)
+        last_chapter_read (str): Chapter terakhir dibaca
+        reading_platform (str): Platform membaca
+        description (str): Deskripsi buku
+        type_choice (str): Tipe buku (manhwa/manhua)
+        cover_input (str): URL/path cover buku
 
     Returns:
         str: Path file yang dibuat
+
+    Raises:
+        ValueError: Jika title kosong
+        Exception: Jika terjadi kesalahan saat membuat file
     """
+    if not title.strip():
+        raise ValueError("Judul buku tidak boleh kosong")
+
     try:
-        # Ubah base_dir ke path yang spesifik
         base_dir = Path(__file__).parent.parent / "library_komik_md"
         base_dir.mkdir(parents=True, exist_ok=True)
 
-        # Format konten markdown
-        md_content = [
-            "---",
-            f"original name: {title}",
-            f"cover: {format_cover(cover_input)}",
-            f"penulis: {author}",
-            f"released: {year_published}",
-            f"genres: {format_genres(genre)}",
-            f"type: #{type_choice}",
-            f"chapter on read: {last_chapter_read}",
-            f"updated-by: {reading_platform}",
-            "---",
-            "",
-            f"**deskripsi:** {description or 'Silakan isi deskripsi buku di sini.'}",
-            "",
-            "Silakan lengkapi keterangan buku di atas.",
-        ]
+        metadata = {
+            "original name": title,
+            "cover": format_cover(cover_input),
+            "penulis": author,
+            "released": year_published,
+            "genres": format_genres(genre),
+            "type": f"#{type_choice}",
+            "chapter on read": last_chapter_read,
+            "updated-by": reading_platform
+        }
 
-        # Buat nama file yang aman
-        file_name = create_safe_filename(title)
-        file_path = base_dir / file_name
+        md_content = ["---"]
+        md_content.extend(f"{key}: {value}" for key, value in metadata.items())
+        md_content.extend([
+            "---\n",
+            f"**deskripsi:** {description or 'Silakan isi deskripsi buku di sini.'}\n",
+            "Silakan lengkapi keterangan buku di atas."
+        ])
 
-        # Tulis ke file
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(md_content))
+        file_path = base_dir / create_safe_filename(title)
+        file_path.write_text("\n".join(md_content), encoding="utf-8")
 
         return str(file_path)
 
